@@ -1,0 +1,222 @@
+---
+title: "Final Project"
+author: "Anisha Marya"
+date: "`r Sys.Date()`"
+documentclass: article
+geometry: margin=1in
+fontsize: 11pt
+output:
+  pdf_document:
+    toc: false
+    df_print: tibble
+    fig_caption: false
+    number_sections: false
+    dev: pdf
+    highlight: tango
+  html_document:
+    theme: default
+    self_contained: true
+    toc: false
+    df_print: tibble
+    fig_caption: false
+    number_sections: false
+    smart: true
+    dev: svg
+---
+
+```{r setup, include = FALSE}
+# DO NOT ALTER THIS CHUNK
+# Set knitr options
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = TRUE,
+  fig.width = 5,
+  fig.asp = 0.618,
+  out.width = "70%",
+  dpi = 120,
+  fig.align = "center",
+  cache = FALSE
+)
+# Load required packages
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(infer))
+suppressPackageStartupMessages(library(modelr))
+suppressPackageStartupMessages(library(broom))
+# Load dataset
+college <- read_rds("college.rds") %>%
+  type_convert(
+    na=combine("", "NA", "PrivacySuppressed")
+  )
+# Set seed
+set.seed(98261936)
+```
+
+## Question of Interest
+
+The question of interest for this project is: is there a relationship between salary (response variable) and debt (explanatory). This is an interesting question because there is debt associated with the cost of a college education. This question will help us better understand that if a student is to acquire more debt then will that mean that later on they will have a higher salary. We will use the variables GRAD_DEBT_MDN (the median debt for students who have completed their education), WDRAW_DEBT_MDN (the median debt for students who have not completed their education), CONTROL (the type of university, public or private), and MD_EARN_WNE_P10 (the median earnings of the students working not enrolled after 10 years.) I will be modeling for this project. 
+
+
+## Preprocessing
+```{r, tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+college_reduced <- select(college,
+                          INSTNM,
+                          GRAD_DEBT_MDN, 
+                          WDRAW_DEBT_MDN, 
+                          SCH_DEG,
+                          CONTROL, 
+                          MD_EARN_WNE_P10
+                
+                   )
+```
+This code chunk created a new data set with the variables needed to perform the analysis on the question of interest. 
+```{r}
+college_reduced %>%
+  rename(
+        'Institution Name' = INSTNM,
+      'Graduated Median Debt'  = GRAD_DEBT_MDN, 
+       'Not Graduated Median Debt' = WDRAW_DEBT_MDN, 
+       'Type of Degree Awarded' = SCH_DEG,
+       'Publ or Pri Uni' = CONTROL, 
+       'Median Earnings Not Enrolled After 10 Yrs' = MD_EARN_WNE_P10
+       
+  )
+```
+This code chunk used the rename function to take the variable name from the date set and rename it for the new data set so that it can be more easily understood.
+```{r}
+college_reduced %>%
+  mutate(
+    Degree = recode(
+        SCH_DEG,
+        '0' = "Not classified",
+        `1` = "Predominatly certificate-degree granting",
+        `2` = "Predominatly associate-degree granting",
+        '3' = "Predominatly bachelor-degree granting",
+        '4' = "Predominatly graduate-degree granting"
+    ),
+    Type_of_University = recode(
+      CONTROL, 
+      '1' = "Public",
+      '2' = "Private Nonprofit",
+      '3' = "Private For-profit"
+    )
+    
+  )
+
+```
+
+This code chunk used the mutate function and then recoded two columns, SCH_DEG and CONTROL. This was done to clarify what each numerical value was associated with. 
+
+
+## Visualization
+```{r}
+ggplot(college_reduced, mapping = aes(x= GRAD_DEBT_MDN, y = MD_EARN_WNE_P10 )) +
+  geom_point(alpha = 5 / 100) +
+  geom_abline(slope = .688, intercept = 23976, color = "blue") +
+  labs(
+    title = "Median Debt vs. Median Earning From Entry",
+    x = "Median Debt of Graduated Students", 
+    y = "Median Earnings"
+  ) 
+  
+```
+This scatter plot was created to show the general relationship between the median amount of debt taken on by students and their median earnings. This graph shows that generally as the debt increases so does the salary, so there is a positive association between the two variables. The graph and the line of best fit show there is a linear relationship, but the strength of the relationship is weak because the r squared is 0.17, which means 17% of the variation in salary is explained by a linear model.
+
+```{r}
+ggplot(college_reduced, mapping = aes(x =WDRAW_DEBT_MDN, y = MD_EARN_WNE_P10)) +
+  geom_violin() +
+  coord_flip() +
+  labs(
+    title = "Median Debt vs. Median Earnings From Entry",
+    x = "Median Debt of Students Who Withdrew",
+    y= "Median Earnings"
+  )
+```
+This was also created to show how the  wider sections of the violin plot represent a higher probability that members of the population will take on the given value. This shows that most of the colleges are clustered towards the left of the plot. There are a small number of colleges that have a high amount of median earnings that pull the tail of the plot farther to the right. 
+
+
+```{r}
+ggplot(college_reduced, mapping =  aes(x = CONTROL, y = GRAD_DEBT_MDN)) + geom_boxplot() +
+facet_wrap( ~ CONTROL, scales="free") +
+  labs(
+    title = "Median Debt of Graduates By Type of University", 
+    x= "Type of Univeristy",
+    y= "Median Debt of Graduates"
+  )
+ 
+```
+This graph was created to show the median amount of debt graduated students took on based on the type of university they went to (public, private nonprofit, private for-profit). Box plot 1 is representative of a public university, 2 is a private nonprofit, and 3 is a private for-profit, this was created to make it easier to visualize how the three different types of universities and debt are related. Private nonprofit universities have higher median debt compared to public and private for-profit universities. There some evident outliers which are notable, box plot 1 has just one single outlier which shows that there is consistent debt around the median, box plot 2 has outliers for debt above and below the median, and box plot 3 shows outliers only above the median.
+
+
+
+## Summary Statistics
+```{r}
+college_reduced %>%
+  group_by(CONTROL) %>%
+  summarise(n(),
+    mean    = mean(GRAD_DEBT_MDN, na.rm = TRUE),
+    median  = median(GRAD_DEBT_MDN, na.rm = TRUE),
+    std.dev = sd(GRAD_DEBT_MDN, na.rm = TRUE),
+    iqr     = IQR(GRAD_DEBT_MDN, na.rm = TRUE),
+    min     = min(GRAD_DEBT_MDN, na.rm = TRUE),
+    max     = max(GRAD_DEBT_MDN, na.rm = TRUE)
+  )
+```
+This shows that for this variable, GRAD_DEBT_MDN, that means and medians for columns 1, 2, and 3 are largely different. There are not close together which shows that each type of university has students acquiring debt in different amounts with 2 (private nonprofit) at the highest for mean and median. 
+
+```{r}
+college_reduced %>%
+  group_by(CONTROL) %>%
+  summarise(n(),
+    mean    = mean(MD_EARN_WNE_P10, na.rm = TRUE),
+    median  = median(MD_EARN_WNE_P10, na.rm = TRUE),
+    std.dev = sd(MD_EARN_WNE_P10, na.rm = TRUE),
+    iqr     = IQR(MD_EARN_WNE_P10, na.rm = TRUE),
+    min     = min(MD_EARN_WNE_P10, na.rm = TRUE),
+    max     = max(MD_EARN_WNE_P10, na.rm = TRUE)
+  )
+```
+This shows that for this variable, MD_EARN_WNE_P10, that means and medians for columns 1, 2, and 3 are largely different. There are not close together which shows that each type of university has students acquiring debt in different amounts with 2 (private nonprofit) at the highest for mean and median, which was same for the GRAD_DEBT_MDN variable. 
+## Data Analysis
+
+```{r}
+college_model <- lm(MD_EARN_WNE_P10 ~ GRAD_DEBT_MDN, data = college_reduced)
+```
+This code block creates a linear model using the lm() function. The model contains information on the coefficients and the residuals. The coefficients are 2.40e+04 and 6.89e-01. 
+
+```{r}
+tidy(college_model)
+```
+This code block uses the tidy() function to construct a tibble that summarizes the model's statistical findings. The coefficients are 2.40e+04 and 6.89e-01. 
+
+```{r}
+glance(college_model)
+```
+This code block uses the glance() function to create one row summary of the model. This gives us the r squared value which is 0.17 which shows that there is not a strong correlation between the median debt and salary. This just shows that the modeling done for this data set and question of interest can have a positively linear relationship but weak strength. 
+
+```{r}
+summary(college_model)
+```
+
+```{r}
+qqnorm(college_reduced$GRAD_DEBT_MDN)
+qqline(college_reduced$GRAD_DEBT_MDN)
+
+```
+This Q-Q plot shows that for the median debt for graduates is skewed and more right/positive skew so this that the data is not as evenly or normally distributed. 
+```{r}
+plot(lm(college_model))
+```
+
+The residuals vs fitted plot shows that most of the points are towards the bottom of the plot and there is no clear pattern in the residuals which indicates there isn't heteroscedasticity. The normal Q-Q plot shows that there is a right/positive skew which indicates that most of the data is on the left. The scale location shows that the variability of the points around the red line plotted are which shows there are more randomly spread points which shows equal variance. The residuals vs leverage plot shows that there are some clear outliers which show they have high leverage. Most of the points are skill concentrated on the left side which shows no heteroscedasticity.
+
+
+## Conclusion
+
+  From the visualization section, the first scatter plot showed that there was a positive linear relationship that was weak in strength, this is due to the r squared being 0.17 which is not close to one, the violin plot also visualized that the universities for the most part clustered towards the left side indicating that the amount of debt varied across colleges, and the third plot in the visualization showed the median broken into three separate plots to show by university type (public, private nonprofit, and private forprofit) and each plot had either a single outlier (public) or multiple outlier (both types of private colleges). The summary statistics section for both the GRAD_DEBT_MDN variable and MD_EARN_WNE_P10 variable, grouped by type of university showed that medians were not close to each other and the median debt for private nonprofit was the highest out of the three. The data analysis section created a linear model for the GRAD_DEBT_MDN variable and MD_EARN_WNE_P10 variable, from that the tidy and glance function were used. The tidy function gave the coefficients of 2.40e+04 and 6.89e-01. The glance function gave the r squared which was 0.17 which is what indicated the weak strength in the relationship between debt and salary. The original question was: is there a relationship between debt and salary. After the analysis it can be said that there is a weak relationship between debt and salary.
+  
+  The finding from this analysis imply that since there is not a strong relationship between debt and salary. This is interesting for society because it known that a large number of people who enroll in college may have to take out loans to cover the cost of their education, there are also assumptions that the more expensive the schools fees are (meaning the more debt acquired) could lead to a higher salary, but according to this analysis that is not the case. The r squared of 0.17 or 17%  variation in salary is explained by a linear model, so even if there is a large amount of debt it most likely will not correlate strongly to salary.  
+ 
+
+
+
+
