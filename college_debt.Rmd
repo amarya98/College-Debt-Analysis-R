@@ -1,5 +1,5 @@
 ---
-title: "Final Project"
+title: "College Debt Analysis"
 author: "Anisha Marya"
 date: "`r Sys.Date()`"
 documentclass: article
