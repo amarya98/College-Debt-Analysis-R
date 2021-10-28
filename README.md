@@ -2,7 +2,7 @@
 
 ## Is there a relationship between salary and debt?
 
-With the increasing cost of attending college, wondering if it taking on potential debt to get a degree has become a question that many ask before commiting to higher education. It is known that a large number of people who enroll in college may have to take out loans to cover the cost of their education, there are also assumptions that the more expensive the schools fees are (meaning the more debt acquired) could lead to a higher salary, but according to this analysis that is not the case.
+With the increasing cost of attending college, wondering if taking on potential debt to get a degree has become a question that many ask before committing to higher education. It's known that a large number of people who enroll in college may have to take out loans to cover the cost of their education, there are also assumptions that the more expensive the school's fees are (meaning more debt acquired) could lead to a higher salary, but according to this analysis that is not the case.
 
 To answer this question, I will be working with the *College Scorecard* dataset started by The Obama Administration in September 2015. Each row in this dataset contains information about a college in the USA. 
 
@@ -11,9 +11,9 @@ To answer this question, I will be working with the *College Scorecard* dataset 
 
 ## The Verdict
 
-The original question was: is there a relationship between debt and salary. After the analysis it can be said that there is a weak relationship between these two variables. The findings from this analysis imply that there is not a strong relationship between debt and salary. 
+The original question was: is there a relationship between debt and salary. After the analysis it can be said that there is a weak relationship between these two variables.
 
-The r squared of 0.17 or 17% variation in salary is explained by a linear model, so even if there is a large amount of debt it most likely will not correlate strongly to salary:
+The R-squared of 0.17 means that 17% of the variation in salary can be explained by a linear model on debt. Said another way, a large amount of debt taken on does NOT correlate with a higher salary after graduation:
 
 ``
 college_model <- lm(MD_EARN_WNE_P10 ~ GRAD_DEBT_MDN, data = college_reduced)
