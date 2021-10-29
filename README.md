@@ -11,15 +11,17 @@ To answer this question, I analyzed the *College Scorecard* dataset started by T
 
 ## The Verdict
 
-From my analysis, I found that there was a weak relationship between the amount of debt acquired and the salary after graduation. I built a linear regression model to better understand the median salary earned and amount of debt had by graduation. 
+From my analysis, I found that there was a weak relationship between the amount of debt acquired and the salary after graduation. 
 
 <img width="550" alt="Screen Shot 2021-10-27 at 2 55 23 PM" src="https://user-images.githubusercontent.com/84459190/139129093-b6815858-ed53-4bb5-aa98-7e837b0fd33b.png">
 
-The R-squared of 0.17 means that 17% of the variation in salary can be explained by a linear model on debt. Said another way, a large amount of debt taken on does NOT correlate with a higher salary 10 years after graduation:
+I built a linear regression model to better understand the median salary earned and amount of debt had by graduation:
 
 ``
 college_model <- lm(MD_EARN_WNE_P10 ~ GRAD_DEBT_MDN, data = college_reduced)
 ``
+
+The R-squared of 0.17 means that 17% of the variation in salary can be explained by a linear model on debt. Said another way, a large amount of debt taken on does NOT correlate with a higher salary 10 years after graduation:
 
 ``
 glance(college_model)
